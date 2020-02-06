@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>スクラッチ おみくじ</title>
+<script>
+var canvasLottery = new Array();      //くじ用キャンバス
+var contextLottery = new Array();
+var canvas = new Array();
+var context = new Array();
+var canvasRect = new Array();
+var lucky = ["大あたり","あたり","はずれ","はずれ"];  //くじの内容
+var mouseDown;
+var sx,sy;
+
+function init() {
+    for(var i=0;i<lucky.length; i++) {
+        //スクラッチくじの作成
+        var div = document.createElement("div");
+
+        //くじ用キャンパスの作成
+        var lottery = document.createElement("canvas");
+        lottery.id = "lottery_" +i;
+        lottery.width = 200;
+        lottery.height = 200;
+        div.appendChild(lottery);
+
+        //スクラッチ用キャンバスの作成
+        var silver = document.createElement("canvas");
+        silver.id = "silver_" + i;
+        silver.width = 200;
+        silver.height = 200;
+        silver.classList.add("silver");
+        silver.onmousedown = startDraw;
+        silver.onmousemove = onDraw;
+        silver.onmouseup = endDraw;
+        silver.onmouseleave = endDraw;
+        div.appendChild(silver);
+
+        //スクラッチくじを配置
+        document.getElementById("lottery").appendChild(div);
+
+        //改行（回り込み解除）
+        if (i%2 == 1) {
+            var br = document.createElement("br");
+            document.getElementById("lottery").appendChild(br);
+         }
+
+    // くじ用キャンバスの取得
+      canvasLottery[i] = document.getElementById("lottery_" +i);
+      contextLottery[i] = canvasLottery[i].getContext("2d");
+
+    //スクラッチ用キャンバスの取得
+      canvas[i] = document.getElementById("silver_"+i);
+      context[i] = canvas[i].getContext("2d");
+      canvasRect[i] = canvas[i].getBoundingClientRect();
+    }
+
+    //スクラッチくじをセット
+    setLottery() ;
+    }
+
+    function setLottery() {
+    //くじのシャッフル
+    for(var i=lucky.length-1; i>=0; i--) {
+        var j = Math.floor(Math.random()*i);
+        var temp = lucky[i];
+        lucky[i] = lucky[j];
+        lucky[j] = temp;
+      }
+
+    //スクラッチくじの初期化
+    for (var i=0; i<lucky.length;i++) {
+        initLottery(i);
+      }
+    }
+
+    function initLottery(index) {
+        //くじの初期化
+    contextLottery[index].clearRect(0,0,200,200);
+    contextLottery[index].font = "bold 40px 'メイリオ'";
+    contextLottery[index].textAlign = "center";
+    contextLottery[index].textBaseline = "middle";
+    contextLottery[index].fillStyle = "#FF0000";
+    contextLottery[index].fillText(lucky[index],100,100);
+    contextLottery[index].strokeStyle = "#CC0000";
+    contextLottery[index].lineWidth = 5;
+    contextLottery[index].beginPath();
+    contextLottery[index].arc(100,100,95,0,Math.PI*2);
+    contextLottery[index].stroke();
+
+    //銀色部分
+    var grad = context[index].createLinearGradient(0,0,200,200);
+    grad.addColorStop(0,"#BBBBBB");
+    grad.addColorStop(0.3,"#EEEEEE");
+    grad.addColorStop(0.6,"#BBBBBB");
+    grad.addColorStop(1,"#AAAAAA");
+    context[index].globalCompositeOperation = "source-over";
+    context[index].fillStyle = grad;
+    context[index].beginPath();
+    context[index].arc(100,100,90,0,Math.PI*2);
+    context[index].fill();
+    }
+
+function scratch(context,x1,y1,x2,y2,r) {
+    //スクラッチ
+    context.globalCompositeOperation = "destination-out";
+    context.lineWidth = r;
+    context.beginPath();
+    context.moveTo(x1,y1);
+    context.lineTo(x2,y2);
+    context.stroke();
+}
+
+function startDraw(event) {
+    //マウスボタンが押された
+    mouseDown = true;
+
+  //スクラッチするキャンバスのIDを取得
+  var id = event.target.id.split("_")[1];
+
+  //始点をセット
+  sx = event.clientX - canvasRect[id].left;
+  sy = event.clientY - canvasRect[id].top;
+}
+
+function onDraw(event) {
+    if (mouseDown) {
+        //スクラッチするキャンバスのIDを取得
+var id = event.target.id.split("_")[1];
+
+//マウスの位置
+var x = event.clientX - canvasRect[id].left;
+var y = event.clientY - canvasRect[id].top;
+
+//スクラッチ
+scratch(context[id],sx,sy,x,y,15);
+
+//始点を保存
+sx = x;
+sy = y;
+ }
+}
+
+function endDraw(event) {
+    //マウスボタンが放たれた
+    mouseDown = false;
+}
+</script>
+<style>
+div {
+    position : relative;
+    float : left;
+}
+.silver {
+    position : absolute;
+    top: 0px;
+    left:0px;
+}
+#lottery br {clear: both;}
+</style>
+</head>
+<body onload="init()">
+<p>スクラッチおみくじ</p>
+<input type="button" value="もう一回だけ" onclick="setLottery()">
+<hr>
+<div id="lottery"></div>
+</body>
+</html>
